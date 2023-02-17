@@ -78,7 +78,12 @@ RUN set -eux \
     && apt-get install --yes --quiet --no-install-recommends ${RUNTIME_PACKAGES} \
   && echo "Installing supervisor" \
     && python3 -m pip install --default-timeout=1000 --upgrade --no-cache-dir supervisor==4.2.5 \
-    && mkdir /var/log/supervisord /var/run/supervisord
+    && mkdir /var/log/supervisord /var/run/supervisord \
+  && echo "Installing NLTK data" \
+    && python3 -m pip install --default-timeout=1000 --upgrade --no-cache-dir nltk \
+    && python3 -W ignore::RuntimeWarning -m nltk.downloader -d "/usr/share/nltk_data" snowball_data \
+    && python3 -W ignore::RuntimeWarning -m nltk.downloader -d "/usr/share/nltk_data" stopwords \
+    && python3 -W ignore::RuntimeWarning -m nltk.downloader -d "/usr/share/nltk_data" punkt
 
 
 RUN wget -O paperless.tar.xz https://github.com/paperless-ngx/paperless-ngx/releases/download/v1.13.0/paperless-ngx-v1.13.0.tar.xz \
