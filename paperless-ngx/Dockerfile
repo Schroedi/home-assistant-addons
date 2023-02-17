@@ -120,10 +120,18 @@ RUN apt-get -y purge build-essential libqpdf-dev \
 
 # copy scripts
 # FROM ORIGINAL DOCKER FILE: this fixes issues with imagemagick and PDF
-RUN cp docker/imagemagick-policy.xml /etc/ImageMagick-6/policy.xml
-RUN cp gunicorn.conf.py /usr/src/paperless
-RUN cp docker/supervisord.conf /etc/supervisord.conf
-# RUN cp docker/docker-entrypoint.sh /sbin/docker-entrypoint.sh
+RUN cp docker/imagemagick-policy.xml /etc/ImageMagick-6/policy.xml \
+    && cp gunicorn.conf.py /usr/src/paperless \
+    && cp docker/supervisord.conf /etc/supervisord.conf \
+    && cp docker/wait-for-redis.py /sbin/wait-for-redis.py \
+    && chmod 755 /sbin/wait-for-redis.py \
+    && cp docker/env-from-file.sh /sbin/env-from-file.sh \
+    && chmod 755 /sbin/env-from-file.sh \
+    && cp docker/paperless_cmd.sh /usr/local/bin/paperless_cmd.sh \
+    && chmod 755 /usr/local/bin/paperless_cmd.sh \
+    && cp docker/flower-conditional.sh /usr/local/bin/flower-conditional.sh \
+    && chmod 755 /usr/local/bin/flower-conditional.sh \
+    && cp docker/docker-entrypoint.sh /sbin/docker-entrypoint.sh
 COPY scripts/docker-entrypoint.sh /sbin/docker-entrypoint.sh
 COPY scripts/docker-prepare.sh /sbin/docker-prepare.sh
 
