@@ -2,50 +2,84 @@ ARG BUILD_FROM
 FROM $BUILD_FROM
 
 #Dependencies
-RUN apt-get update \
-    && apt-get -y --no-install-recommends install \
-    build-essential \
-    curl \
-    file \
-    fonts-liberation \
-    gettext \
-    gosu \
-    ghostscript \
-    gnupg \
-    icc-profiles-free \
-    imagemagick \
-    jq \
-    libatlas-base-dev \
-    libffi-dev \
-    libssl-dev \
-    liblept5 \
-    libmagic-dev \
-    libpq-dev \
-    libqpdf-dev \
-    libxml2 \
-    libxml2-dev \
-    libxslt1-dev \
-    libzbar0 \
-    optipng \
-    p7zip-full \
-    pngquant \
-    python3-pip \
-    python3-dev \
-    python3-scipy \
-    qpdf \
-    sudo \
-    tesseract-ocr \
-    tesseract-ocr-eng \
-    tesseract-ocr-deu \
-    tesseract-ocr-fra \
-    tesseract-ocr-ita \
-    tesseract-ocr-spa \
-    tzdata \
-    unpaper \
-    unzip \
-    wget \
-    zlib1g \
+ARG RUNTIME_PACKAGES="\
+  # General utils
+  curl \
+  # Docker specific
+  gosu \
+  # Timezones support
+  tzdata \
+  # fonts for text file thumbnail generation
+  fonts-liberation \
+  gettext \
+  ghostscript \
+  gnupg \
+  icc-profiles-free \
+  imagemagick \
+  # Image processing
+  liblept5 \
+  liblcms2-2 \
+  libtiff5 \
+  libfreetype6 \
+  libwebp6 \
+  libopenjp2-7 \
+  libimagequant0 \
+  libraqm0 \
+  libjpeg62-turbo \
+  # PostgreSQL
+  libpq5 \
+  postgresql-client \
+  # MySQL / MariaDB
+  mariadb-client \
+  # For Numpy
+  libatlas3-base \
+  # OCRmyPDF dependencies
+  tesseract-ocr \
+  tesseract-ocr-eng \
+  tesseract-ocr-deu \
+  tesseract-ocr-fra \
+  tesseract-ocr-ita \
+  tesseract-ocr-spa \
+  unpaper \
+  pngquant \
+  # pikepdf / qpdf
+  jbig2dec \
+  libxml2 \
+  libxslt1.1 \
+  libgnutls30 \
+  # Mime type detection
+  file \
+  libmagic1 \
+  media-types \
+  zlib1g \
+  # Barcode splitter
+  libzbar0 \
+  poppler-utils \
+  # RapidFuzz on armv7
+  libatomic1 \
+  # for Homeassistant
+  build-essential \
+  libjpeg62-turbo-dev \
+  libmariadb-dev \
+  libpq-dev \
+  p7zip-full \
+  python3-dev \
+  python3-pip \
+  python3-scipy \
+  sudo \
+  unzip \
+  wget"
+
+# Install basic runtime packages.
+# These change very infrequently
+RUN set -eux \
+  echo "Installing system packages" \
+    && apt-get update \
+    && apt-get install --yes --quiet --no-install-recommends ${RUNTIME_PACKAGES} \
+  && echo "Installing supervisor" \
+    && python3 -m pip install --default-timeout=1000 --upgrade --no-cache-dir supervisor==4.2.5 \
     && mkdir /var/log/supervisord /var/run/supervisord
+
 
 RUN wget -O paperless.tar.xz https://github.com/paperless-ngx/paperless-ngx/releases/download/v1.13.0/paperless-ngx-v1.13.0.tar.xz \
     && 7z x paperless.tar.xz \
@@ -71,13 +105,12 @@ RUN cp requirements.txt /usr/src/paperless/requirements.txt
 # copy app
 RUN cp -R ./src /usr/src/paperless/
 
-
 # Install requirements
 RUN python3 -m pip install --upgrade pip supervisor setuptools \
     && env QPDF_SOURCE_TREE=/qpdf python3 -m pip install --no-cache-dir -r requirements.txt
 
 #### Redis Setup
-RUN apt-get install redis-server redis-tools -y
+RUN apt-get install --yes --quiet --no-install-recommends redis-server redis-tools
 RUN sed -i "s/bind .*/bind 127.0.0.1/g" /etc/redis/redis.conf
 
 # Clean Up
